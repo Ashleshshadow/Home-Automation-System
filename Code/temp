@@ -1,0 +1,141 @@
+const int Alarm = 2;      
+const byte interruptPin = 3;
+const int Sensor = 7;  
+const int Pot = A5;
+int BtnStatus = 0;
+int SensorStatus = 0;
+bool AlarmStatus= false;
+int AlarmSetterCounter=0;
+int AlarmSensitivity=20;
+int relayPin = 13;
+int sensorAmb = A0;
+int Sensor_value = 0;
+int tempsen = A1;
+void setup()
+{
+  pinMode(Alarm, OUTPUT);     
+   pinMode(Sensor, INPUT);  
+   pinMode(Pot, INPUT); 
+   attachInterrupt(digitalPinToInterrupt(3),stop,CHANGE);
+  Serial.begin(9600);
+  pinMode(Alarm, OUTPUT);     
+   pinMode(Sensor, INPUT);  
+   pinMode(Pot, INPUT); 
+   attachInterrupt(digitalPinToInterrupt(3),stop,CHANGE);
+  Serial.begin(9600);
+  pinMode(relayPin, OUTPUT);
+  pinMode(A2,INPUT);
+  pinMode(5,OUTPUT);
+  pinMode(6,OUTPUT);
+  pinMode(sensorAmb, INPUT);
+  pinMode(11 , OUTPUT);
+  pinMode(tempsen , INPUT);
+  Serial.begin(9600);
+}
+long readUltrasonicDistance(int triggerPin, int echoPin)
+{
+   pinMode(9, OUTPUT);  
+  digitalWrite(9, LOW);
+  delayMicroseconds(2);
+  digitalWrite(9, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(9, LOW);
+  pinMode(10, INPUT);
+ 
+  return pulseIn(10, HIGH);
+}
+void loop()
+{
+  Sensor_value = analogRead(sensorAmb);
+  if(Sensor_value>800)
+  {
+    digitalWrite(relayPin, HIGH);
+    delay(300);
+  }
+    else{
+      digitalWrite(relayPin, LOW);
+      delay(300);
+  }
+  if ((-40 + 0.488155 * (analogRead(A1) - 20)) > 50) 
+  {
+    digitalWrite(6,HIGH);
+    tone(6,500);
+    delay(300);
+}
+	else{
+   		digitalWrite(6,LOW);
+        noTone(6);
+  		delay(300);
+}
+  if(A2>500)
+  {
+    digitalWrite(5,HIGH);
+    delay(300);
+  }
+  else{
+    digitalWrite(5,LOW);
+    delay(300);
+  }
+  int level = 0.01723 * readUltrasonicDistance(9,10);
+  if(level>80)
+  {
+    digitalWrite(11,HIGH);
+    delay(300);
+  }
+  else if(level<20)
+  {
+    digitalWrite(11,LOW);
+    delay(300);
+  }
+  else
+  {
+    Serial.println("Water is FULL!");
+  }
+  SensorStatus = digitalRead(Sensor); 
+  AlarmSensitivity = 20*((float)analogRead(Pot)/(float)1024);
+  
+  if (SensorStatus == HIGH) 
+  {
+    AlarmSetterCounter++;
+    Serial.println(AlarmSetterCounter);
+    if(AlarmSetterCounter>=AlarmSensitivity)
+    {
+      AlarmStatus=true;
+    }
+    else
+    {
+      AlarmStatus=false;
+    }
+    
+  }
+  else 
+  {
+    AlarmSetterCounter=0;
+    digitalWrite(Alarm,LOW);
+  }
+  if(AlarmStatus)
+  {
+    digitalWrite(Alarm,HIGH);
+    Serial.println("detected");
+    delay(10000);
+    Serial.println(SensorStatus);
+    Serial.println(AlarmSetterCounter);
+    AlarmSetterCounter=0;
+    AlarmStatus=false;
+  }
+  else
+  {	
+    digitalWrite(Alarm,LOW);
+    delay(100);
+    AlarmStatus=false;
+  }
+}
+
+void stop()
+{
+  digitalWrite(Alarm,LOW);
+  AlarmSetterCounter=0;
+      Serial.println("triggered");
+      Serial.println(AlarmSetterCounter);
+  delay(1000);
+}
